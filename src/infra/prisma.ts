@@ -6,8 +6,6 @@ declare global {
   const prisma: PrismaClient;
 }
 
-if (process.env.NODE_ENV !== 'production') {
-  (globalThis as any).prisma = prisma;
-}
+(globalThis as any).prisma = prisma;
 
 export default prisma;

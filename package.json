@@ -1,6 +1,6 @@
 {
   "name": "shortener-link-api",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "Api de encurtador de link",
   "author": "Lucas Garcia",
   "private": true,
