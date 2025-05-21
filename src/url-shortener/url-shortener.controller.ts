@@ -29,11 +29,14 @@ export class UrlShortenerController {
 
     if (user) {
       data.user = {
-        id: user['userId'],
+        id: String(user['userId']),
       };
     }
 
-    return this.urlShortenerService.createUrlShortener(data);
+    return this.urlShortenerService.createUrlShortener({
+      urlOriginal: data.urlOriginal,
+      ...(data.user && { user: data.user }),
+    });
   }
 
   @Get('all')
@@ -48,23 +51,23 @@ export class UrlShortenerController {
     });
   }
 
-  @Patch(':code')
+  @Patch(':id')
   @UseGuards(JwtAuthGuard)
   updateUrl(
-    @Param('code') code: string,
+    @Param('id') id: string,
     @Body() data: UpdateUrlShortenerDto,
     @Req() req: Request,
   ) {
-    const user = req?.user;
+    if (!req.user) return;
+    const user = req.user;
 
-    data.code = code;
-    if (user) {
-      data.user = {
+    return this.urlShortenerService.updateUrl({
+      id,
+      novaUrl: data.novaUrl,
+      user: {
         id: user['userId'],
-      };
-    }
-
-    return this.urlShortenerService.updateUrl(data);
+      },
+    });
   }
 
   @Get('restore/:code')
@@ -80,12 +83,12 @@ export class UrlShortenerController {
     });
   }
 
-  @Delete(':code')
+  @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  removeUrl(@Param('code') code: string, @Req() req: Request) {
+  removeUrl(@Param('id') id: string, @Req() req: Request) {
     const user = req?.user;
 
     if (!user) throw new NotFoundException('Usuário não encontrado');
-    return this.urlShortenerService.removeUrl({ code, userId: user['userId'] });
+    return this.urlShortenerService.removeUrl({ id, userId: user['userId'] });
   }
 }

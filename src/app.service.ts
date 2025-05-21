@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AppService {
-  getHello(): string {
-    return 'Página inicial!';
+  getHello() {
+    return { message: 'Api de encurtador de links!' };
   }
 }

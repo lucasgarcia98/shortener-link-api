@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { UrlShortener, User } from 'generated/prisma';
+import { UrlShortener, User } from '@prisma/client';
 import {
   CreateUrlShortenerDto,
   UpdateUrlShortenerDto,
@@ -16,7 +16,7 @@ export class UrlShortenerService {
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   private readonly codeLength = Number(process?.env?.CODE_LENGTH) || 6;
 
-  private generateCode(): string {
+  public generateCode(): string {
     let result = '';
     for (let i = 0; i < this.codeLength; i++) {
       const idx = Math.floor(Math.random() * this.chars.length);
@@ -25,7 +25,7 @@ export class UrlShortenerService {
     return result;
   }
 
-  private async generateUniqueCode(): Promise<string> {
+  public async generateUniqueCode(): Promise<string> {
     let code = this.generateCode();
     while (
       await prisma?.urlShortener.findFirst({
@@ -40,10 +40,14 @@ export class UrlShortenerService {
 
     return code;
   }
-  async createUrlShortener(data: CreateUrlShortenerDto) {
+  async createUrlShortener(
+    data: Pick<CreateUrlShortenerDto, 'urlOriginal'> & {
+      user?: Partial<Pick<User, 'id'>>;
+    },
+  ) {
     const code = await this.generateUniqueCode();
 
-    return prisma?.urlShortener.create({
+    return await prisma?.urlShortener.create({
       data: {
         urlOriginal: data.urlOriginal,
         urlShort: process?.env?.URL + '/' + code,
@@ -122,30 +126,21 @@ export class UrlShortenerService {
       },
     });
 
-    console.log({
-      verifyUrlExists,
-      url,
-    });
     if (!verifyUrlExists) throw new NotFoundException('URL não encontrada');
 
     if (verifyUrlExists?.user?.id !== url?.userId)
       throw new ForbiddenException('Não autorizado');
   }
-  async removeUrl(data: Pick<UrlShortenerWithUser, 'code' | 'userId'>) {
-    const url = await prisma?.urlShortener.findFirst({
+  async removeUrl(data: Pick<UrlShortenerWithUser, 'id' | 'userId'>) {
+    const url = await prisma?.urlShortener.findUnique({
       where: {
-        code: data.code,
+        id: data.id,
       },
     });
 
     if (!url) throw new NotFoundException('URL não encontrada');
 
     if (!data?.userId) throw new NotFoundException('Usuário não informado');
-
-    await this.verifyCanAccessUrl({
-      urlOriginal: url.urlOriginal,
-      userId: data.userId,
-    });
 
     return prisma?.urlShortener.update({
       where: {
@@ -178,30 +173,18 @@ export class UrlShortenerService {
     });
   }
 
-  async updateUrl(url: UpdateUrlShortenerDto) {
+  async updateUrl(
+    url: Pick<UpdateUrlShortenerDto, 'id' | 'novaUrl'> & {
+      user: Pick<User, 'id'>;
+    },
+  ) {
     if (!url) throw new NotFoundException('URL não encontrada');
 
     if (!url?.user?.id) throw new NotFoundException('Usuário não informado');
 
-    await this.verifyCanAccessUrl({
-      code: url.code,
-      userId: url?.user?.id,
-    });
+    if (!url?.id) throw new NotFoundException('ID nao informado');
 
-    const findedUrl = await prisma?.urlShortener.findFirst({
-      where: {
-        code: url.code,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (!findedUrl) throw new NotFoundException('URL não encontrada');
-
-    url.id = findedUrl.id;
-
-    return prisma?.urlShortener.update({
+    return await prisma?.urlShortener.update({
       where: {
         id: url.id,
       },

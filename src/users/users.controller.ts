@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { CreateUserDto, UpdateUserDto } from './dto/users.prisma.dto';
 import { UsersService } from './users.service';
 
@@ -19,12 +11,9 @@ export class UsersController {
     return this.usersService.create(data);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() data: UpdateUserDto) {
-    return this.usersService.update({
-      ...data,
-      id,
-    });
+  @Post('reset-password')
+  resetPassword(@Body() data: UpdateUserDto) {
+    return this.usersService.resetPassword(data);
   }
 
   @Get()

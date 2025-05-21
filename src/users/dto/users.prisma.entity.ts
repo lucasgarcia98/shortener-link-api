@@ -1,4 +1,4 @@
-import { Prisma } from 'generated/prisma';
+import { Prisma } from '@prisma/client';
 
 export class UsersCreateEntity implements Prisma.UserCreateInput {
   id?: string | undefined;

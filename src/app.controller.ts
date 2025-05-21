@@ -1,4 +1,11 @@
-import { Controller, Get, NotFoundException, Param, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Render,
+  Res,
+} from '@nestjs/common';
 import { Response } from 'express';
 import { AppService } from './app.service';
 import { UrlShortenerService } from './url-shortener/url-shortener.service';
@@ -11,7 +18,8 @@ export class AppController {
   ) {}
 
   @Get()
-  getHello(): string {
+  @Render('index')
+  getHello() {
     return this.appService.getHello();
   }
 

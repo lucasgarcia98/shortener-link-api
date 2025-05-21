@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -30,6 +31,36 @@ export class UsersService {
     });
 
     return user;
+  }
+
+  async resetPassword(data: UpdateUserDto) {
+    if (!data.email) {
+      throw new BadRequestException('Email não informado');
+    }
+
+    const user = await prisma?.user.findFirst({
+      where: {
+        email: data.email,
+        deletedAt: null,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuário nao encontrado');
+    }
+
+    data.password = hashSync(data.password, genSaltSync());
+
+    await prisma?.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        password: data.password,
+      },
+    });
+
+    throw new HttpException('Senha alterada com sucesso', 200);
   }
 
   async update(data: UpdateUserDto) {
